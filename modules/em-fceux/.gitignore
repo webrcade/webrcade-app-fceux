@@ -1,0 +1,12 @@
+.DS_Store
+*.o
+*.pyc
+*.blend?
+/.sconf_temp/
+/.sconsign.dblite
+/bin/
+/config.log
+
+/tmp
+node_modules/
+dist/

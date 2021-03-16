@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    html,
+    body {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 1vw;
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      background-color: black;
+      user-select: none;
+      line-height: 1.2;
+      -webkit-font-smoothing: antialiased;
+      color: #e5e5e5;
+    }
+
+    #wrapper {
+      border: 1px solid red;
+      overflow: hidden;
+      display: block;
+      width: 96vw;
+      height: 96vh;
+      /* max-width: calc(96vh*1.333);
+      max-height: calc(96vw*.75); */
+      max-width: calc(96vh*1.333);
+      max-height: calc(96vw*.75);
+
+      text-align: center;
+    }
+
+    #mycanvas {
+      border: 0;
+      margin: 0;
+      overflow: hidden;
+      border: 1px solid blue;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Import em-fceux. -->
+  <script type="text/javascript" src="fceux.js"></script>
+
+  <!-- Contained div for canvas used by em-fceux. -->
+  <!-- <div style="width: 522px; height: 400px; text-align: center"> -->
+  <div id="wrapper">
+    <canvas id="mycanvas"></canvas>
+  </div>
+
+  <div id="button" onclick="start()" style="display: none">
+    Click to start.
+  </div>
+
+
+  <!-- Our app script. -->
+  <script>
+  
+    // Start button and its handler.
+    // Calling fceux.init() below must be done from an user event handler
+    // (and only once) because of browser Web Audio restrictions.
+    const button = document.querySelector('#button');
+    function start() {
+      button.style.display = 'none';
+
+      // Initialize the instance (creates Web Audio etc.)
+      fceux.init('#mycanvas');
+
+      const audioChannel = fceux.getAudioBuffer();
+      //console.log(audioChannel);
+
+      // 'video-system': 'auto',
+      //   'video-ntsc': false,
+      //   'video-tv': false,
+      //   'video-brightness': 100,
+      //   'video-contrast': 0,
+      //   'video-color': 0,
+      //   'video-sharpness': 0.2,
+      //   'video-gamma': 0,
+      //   'video-noise': 0.3,
+      //   'video-convergence': 0.4,
+      //   'video-scanlines': 0.1,
+      //   'video-glow': 0.2,
+      //   'system-port-2': 'zapper',        
+
+      fceux.setConfig('video-system', 'auto');
+      // fceux.setConfig('video-ntsc', true);
+
+      // Download a game ROM and start it.
+      fceux.downloadGame('2048.nes');
+
+      // Run the emulation update loop.
+      // Use requestAnimationFrame() to synchronise to repaints.
+      function updateLoop() {
+        window.requestAnimationFrame(updateLoop);
+        const samples = fceux.update();
+        //console.log(audioChannel[0]);
+      }
+      window.requestAnimationFrame(updateLoop);
+
+      // Bind keyboard input events to controller 1.
+      // The array index below corresponds to the button bit index.
+      const keys = [
+        ['KeyF', 'A'],
+        ['KeyD', 'B'],
+        ['KeyS', 'Select'],
+        ['Enter', 'Start'],
+        ['ArrowUp', 'Up'],
+        ['ArrowDown', 'Down'],
+        ['ArrowLeft', 'Left'],
+        ['ArrowRight', 'Right'],
+      ];
+      let bits = 0;
+      function keyHandler(ev) {
+        for (let i = 0; i < keys.length; ++i) {
+          if (ev.code == keys[i][0]) {
+            if (ev.type == 'keydown') {
+              bits |= 1 << i;
+            } else {
+              bits &= ~(1 << i);
+            }
+            fceux.setControllerBits(bits);
+            ev.preventDefault();
+          }
+        }
+      }
+      window.addEventListener('keydown', keyHandler);
+      window.addEventListener('keyup', keyHandler);
+
+      // Add HTML for the input keys.
+      // const keysDiv = document.querySelector('#keys');
+      // keysDiv.innerHTML += keys
+      //   .map((key) => `${key[1]} - ${key[0]}`)
+      //   .join('<br/>');
+    }
+
+    // Create the Promise for the em-fceux instance.
+    FCEUX().then((fceux_) => {
+      // Store the instance as global.
+      fceux = fceux_;
+      
+      // Display the start button.
+      button.style.display = 'block';
+    });
+  </script>
+</body>
+
+</html>

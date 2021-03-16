@@ -1,0 +1,35 @@
+import glob
+Import('env')
+Export('env')
+source_list = Split("""
+  audio.cpp
+  em.cpp
+  es2.cpp
+  es2tv.cpp
+  es2util.cpp
+  ntsc.cpp
+  splash.cpp
+  video.cpp
+""")
+source_list = [ 'drivers/em/' + s for s in source_list ]
+
+# Need to include zlib functions.
+zlib_source_list = Split(
+"""
+adler32.c
+compress.c
+crc32.c
+deflate.c
+gzio.c
+infblock.c
+infcodes.c
+inffast.c
+inflate.c
+inftrees.c
+infutil.c
+trees.c
+uncompr.c
+zutil.c
+""")
+source_list += ['drivers/win/zlib/' + s for s in zlib_source_list]
+Return('source_list')

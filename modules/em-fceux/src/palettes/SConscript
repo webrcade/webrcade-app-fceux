@@ -1,0 +1,7 @@
+import glob
+Import('env')
+source_list = glob.glob('*.c')
+
+for x in range(len(source_list)):
+  source_list[x] = 'palettes/' + source_list[x]
+Return('source_list')

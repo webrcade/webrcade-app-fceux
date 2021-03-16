@@ -1,0 +1,26 @@
+{
+  "name": "em-fceux-example-minimal",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Minimal em-fceux example.",
+  "author": "Valtteri Heikkilä",
+  "repository": {
+    "type": "git",
+    "url": "git@bitbucket.org:tsone/em-fceux-example-minimal.git"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rm -rf dist ; cp -r node_modules/em-fceux/dist . && cp static/* dist",
+    "dev:setup": "npm link ../em-fceux",
+    "start": "npm run build && cd dist && python -m SimpleHTTPServer 8080 ; true",
+    "prettier": "prettier --write static/"
+  },
+  "devDependencies": {
+    "em-fceux": "^2.0.0",
+    "prettier": "^2.1.2"
+  }
+}

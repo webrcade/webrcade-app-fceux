@@ -1,0 +1,14 @@
+{
+    "files.exclude": {
+        "**/*.o": true,
+    },
+    "files.trimTrailingWhitespace": true,
+    "C_Cpp.default.defines": [
+        "__EMSCRIPTEN__=1",
+        "${default}"
+    ],
+    "C_Cpp.default.includePath": [
+        "~/emsdk/upstream/emscripten/system/include",
+        "${default}"
+    ]
+}
