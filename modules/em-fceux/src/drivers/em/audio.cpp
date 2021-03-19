@@ -35,11 +35,10 @@ bool Audio_Init()
         FCEUD_PrintError("Failed to create audio buffer.");
         return false;
     }
- 
+
     FCEUI_SetSoundVolume(150); // Maximum volume.
     FCEUI_SetSoundQuality(0); // Low quality.
     FCEUI_SetLowPass(0);
-    FCEUI_Sound(48000 + 90 /* Hack to elminate pops */);
     FCEUI_SetTriangleVolume(256);
     FCEUI_SetSquare1Volume(256);
     FCEUI_SetSquare2Volume(256);
@@ -53,6 +52,12 @@ void Audio_Write(int32 *buf, int count)
     for(int i = 0; i < count; i++) {
         sound_buffer[i] = buf[i] / (float)32768;
     }
+}
+
+void Audio_UpdateSoundRate() {
+    int rate = (48000 * (FSettings.PAL ? (PAL_FPS/50.0) : (NTSC_FPS/60.0)));
+    FCEU_printf("Sound rate update: pal=%d rate=%d\n", FSettings.PAL, rate);
+    FCEUI_Sound(rate);
 }
 
 extern "C" float_t* EMSCRIPTEN_KEEPALIVE Audio_GetBuffer(void) {

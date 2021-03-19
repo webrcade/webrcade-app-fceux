@@ -17,6 +17,9 @@
   Module.getAudioBuffer = function() {
     return new Float32Array(fceux.HEAPF32.buffer, Module._Audio_GetBuffer(), 8192);
   };
+  Module.gameMd5 = function() {
+    return Module._gameMd5();
+  };
   Module.deleteSaveFiles = function() {
     const dir = '/tmp/sav';
     FS.unmount(dir);

@@ -46,10 +46,6 @@ namespace emscripten
 #define INPUT_W     256 // Width of input PPU image by fceux (in px).
 #define INPUT_H     240 // Height of input PPU image by fceux (in px).
 
-// The rate of output and emulated (internal) audio (frequency, in Hz).
-extern int em_audio_rate;
-// Number of audio samples per frame.
-extern double em_audio_frame_samples;
 // Number of scanlines to show in current video mode: NTSC -> 224, PAL -> 240.
 extern int em_scanlines;
 
@@ -57,6 +53,7 @@ extern std::string em_video_system;
 
 bool Audio_Init();
 void Audio_Write(int32 *buffer, int count);
+void Audio_UpdateSoundRate();
 extern "C" float_t* Audio_GetBuffer(void);
 
 int  Video_Init(const char* canvasQuerySelector);

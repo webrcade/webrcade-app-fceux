@@ -8,7 +8,6 @@ import {
   VisibilityChangeMonitor
 } from "@webrcade/app-common"
 
-
 const CONTROLS = {
   INPUT_A: 0x01,
   INPUT_B: 0x02,
@@ -19,6 +18,8 @@ const CONTROLS = {
   INPUT_LEFT: 0x40,
   INPUT_RIGHT: 0x80
 }
+
+const SRAM_NAME = 'rom.sav';
 
 export class Emulator {
   constructor(app, debug = false) {
@@ -32,6 +33,7 @@ export class Emulator {
     this.romBytes = null;
     this.romName = null;
     this.pal = null;
+    this.saveStatePath = null;
 
     this.audioChannels = new Array(1);
     this.audioProcessor = null;
@@ -143,8 +145,42 @@ export class Emulator {
     });
   }
 
-  start(canvas) {
-    const { fceux, audioChannels, romBytes, pal } = this;
+  saveState() {
+    const { fceux, started, saveStatePath } = this;
+    if (!started) {
+      return;
+    }
+
+    const result = fceux.exportSaveFiles();
+    if (saveStatePath && result !== undefined && 
+      result[SRAM_NAME] !== undefined) {
+      const sram = result[SRAM_NAME];
+      if (sram.length === 0) {
+        return;
+      }
+
+      let last = sram.length - 1;
+      for (; last > 0; last--) {
+        if (sram[last] !== 0) {
+          break;
+        }
+      }
+      const sramTrimmed = sram.slice(0, ++last);
+      console.log('new len: ' + sramTrimmed.length);
+
+      const state = {
+        name: this.romName,
+        length: sram.length,
+        state: sram
+      };
+
+      console.log(saveStatePath);
+      console.log(state);
+    }
+  }
+
+  async start(canvas) {
+    const { fceux, audioChannels, romBytes, pal, app } = this;
     this.canvas = canvas;
 
     if (this.started) return;
@@ -154,6 +190,8 @@ export class Emulator {
     fceux.init('#screen');
     // Load the game
     fceux.loadGame(new Uint8Array(romBytes));
+    this.saveStatePath = app.getStoragePath(`${fceux.gameMd5()}/sav`);
+
     fceux.setConfig('system-port-2', 'controller');
     if (pal === true) {
       fceux.setConfig('video-system', 'pal');

@@ -34,6 +34,11 @@ class App extends WebrcadeApp {
       })
   }  
 
+  async onPreExit() {
+    await super.onPreExit();
+    this.emulator.saveState();
+  }
+
   componentDidUpdate() {
     const { mode } = this.state;
     const { ModeEnum, emulator, canvas } = this;

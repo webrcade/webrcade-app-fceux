@@ -281,6 +281,8 @@ static bool System_LoadGame(const std::string &path)
         return false;
     }
 
+    Audio_UpdateSoundRate();
+
     EM_ASM({ Module.deleteSaveFiles(); });
     s_game_loaded = true;
     Event_dispatch("game-loaded");

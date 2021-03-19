@@ -101,9 +101,9 @@ static void Resize(int width, int height)
 void FCEUD_VideoChanged()
 {
     PAL = FSettings.PAL ? 1 : 0;
-    em_audio_frame_samples = em_audio_rate / (FSettings.PAL ? PAL_FPS : NTSC_FPS);
     em_scanlines = FSettings.PAL ? 240 : 224;
 
+    Audio_UpdateSoundRate();
     ES2_VideoChanged();
 }
 
