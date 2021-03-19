@@ -98,10 +98,10 @@ export class Emulator {
       else if (controllers.isControlDown(i, CIDS.LEFT)) {
         input |= CONTROLS.INPUT_LEFT;
       }
-      if (controllers.isControlDown(i, CIDS.B)) {
+      if (controllers.isControlDown(i, CIDS.B) || controllers.isControlDown(i, CIDS.X) ) {
         input |= CONTROLS.INPUT_A;
       }
-      if (controllers.isControlDown(i, CIDS.A)) {
+      if (controllers.isControlDown(i, CIDS.A) || controllers.isControlDown(i, CIDS.Y)) {
         input |= CONTROLS.INPUT_B;
       }
       if (controllers.isControlDown(i, CIDS.SELECT)) {
