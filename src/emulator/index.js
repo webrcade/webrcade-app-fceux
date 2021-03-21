@@ -199,7 +199,7 @@ export class Emulator {
 
     // Create loop and audio processor
     this.audioProcessor = new ScriptAudioProcessor(1);
-    this.displayLoop = new DisplayLoop(pal ? 50 : 60, true);
+    this.displayLoop = new DisplayLoop(pal ? 50 : 60, true, this.debug);
     window.fceux = fceux; // TODO: Fix this
     audioChannels[0] = fceux.getAudioBuffer();    
 
@@ -214,10 +214,8 @@ export class Emulator {
     // game loop
     const audioProcessor = this.audioProcessor;
 
-    this.displayLoop.setDebug(this.debug);    
     this.displayLoop.start(() => {
       const samples = fceux.update();
-      //console.log(samples);
       audioProcessor.storeSound(audioChannels, samples);
       this.pollControls();
     });
