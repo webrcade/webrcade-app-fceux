@@ -40,8 +40,13 @@ class App extends WebrcadeApp {
   }  
 
   async onPreExit() {
-    await super.onPreExit();
-    this.emulator.saveState();
+    try {
+      await super.onPreExit();
+      await this.emulator.saveState();
+    } catch (e) {
+      // TODO: Proper logging
+      console.error(e);
+    }
   }
 
   componentDidUpdate() {

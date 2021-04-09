@@ -5,7 +5,8 @@ import {
   DefaultKeyCodeToControlMapping,
   DisplayLoop,
   ScriptAudioProcessor,
-  VisibilityChangeMonitor
+  VisibilityChangeMonitor,
+  Storage
 } from "@webrcade/app-common"
 
 const CONTROLS = {
@@ -41,6 +42,7 @@ export class Emulator {
     this.visibilityMonitor = null;
     this.started = false;
     this.debug = debug;    
+    this.storage = new Storage();
   }
 
   detectPal(filename) {
@@ -145,8 +147,8 @@ export class Emulator {
     });
   }
 
-  saveState() {
-    const { fceux, started, saveStatePath } = this;
+  async saveState() {
+    const { fceux, started, saveStatePath, storage } = this;
     if (!started) {
       return;
     }
@@ -158,40 +160,38 @@ export class Emulator {
       if (sram.length === 0) {
         return;
       }
-
-      let last = sram.length - 1;
-      for (; last > 0; last--) {
-        if (sram[last] !== 0) {
-          break;
-        }
-      }
-      const sramTrimmed = sram.slice(0, ++last);
-      console.log('new len: ' + sramTrimmed.length);
-
-      const state = {
-        name: this.romName,
-        length: sram.length,
-        state: sram
-      };
-
-      console.log(saveStatePath);
-      console.log(state);
+      await storage.put(saveStatePath, sram);
     }
   }
 
   async start(canvas) {
-    const { fceux, audioChannels, romBytes, pal, app } = this;
+    const { fceux, audioChannels, romBytes, pal, app, storage } = this;
     this.canvas = canvas;
 
     if (this.started) return;
     this.started = true;
 
-    // Initialize the instance (creates Web Audio etc.)
+    // Initialize the instance
     fceux.init('#screen');
+
     // Load the game
     fceux.loadGame(new Uint8Array(romBytes));
     this.saveStatePath = app.getStoragePath(`${fceux.gameMd5()}/sav`);
 
+    // Load the save state (if applicable)
+    try {
+      const sram = await storage.get(this.saveStatePath);
+      if (sram) {
+        const saves = {};
+        saves[SRAM_NAME] = sram;
+        fceux.importSaveFiles(saves);
+      }
+    } catch (e) {
+      // TODO: Proper logging
+      console.error("Error loading save state: " + e);
+    }
+
+    // Set configuration (controls and video mode)
     fceux.setConfig('system-port-2', 'controller');
     if (pal === true) {
       fceux.setConfig('video-system', 'pal');
