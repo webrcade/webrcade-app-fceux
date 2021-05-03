@@ -1,8 +1,14 @@
-import { WebrcadeApp, FetchAppData, Unzip, UrlUtil } from '@webrcade/app-common'
+import {
+  WebrcadeApp, 
+  FetchAppData, 
+  Unzip, 
+  UrlUtil, 
+  Resources, 
+  TEXT_IDS 
+} from '@webrcade/app-common'
 import { Emulator } from './emulator'
 
 import './App.scss';
-import '@webrcade/app-common/dist/index.css'
 
 class App extends WebrcadeApp {
   emulator = null;
@@ -13,31 +19,36 @@ class App extends WebrcadeApp {
     // Create the emulator
     if (this.emulator === null) {
       this.emulator = new Emulator(this, this.isDebug());
-    }    
+    }
 
-    const { appProps, emulator, ModeEnum } = this;    
+    const { appProps, emulator, ModeEnum } = this;
 
-    // Get the ROM location that was specified
-    const rom = appProps.rom;
-    if (!rom) throw new Error("A ROM file was not specified.");
-    const pal = appProps.pal !== undefined ? appProps.pal === true : null;
+    try {
+      // Get the ROM location that was specified
+      const rom = appProps.rom;
+      if (!rom) throw new Error("A ROM file was not specified.");
+      const pal = appProps.pal !== undefined ? appProps.pal === true : null;
 
-    // Load emscripten and the ROM
-    const uz = new Unzip();
-    emulator.loadEmscriptenModule()
-      .then(() => new FetchAppData(rom).fetch())
-      .then(response => response.blob())
-      .then(blob => uz.unzip(blob, [".nes", ".fds", ".nsf", ".unf", ".nez", ".unif"]))
-      .then(blob => new Response(blob).arrayBuffer())
-      .then(bytes => emulator.setRom(
-        pal,
-        uz.getName() ? uz.getName() : UrlUtil.getFileName(rom), 
-        bytes))
-      .then(() => this.setState({mode: ModeEnum.LOADED}))
-      .catch(msg => { 
-        this.exit("Error fetching ROM: " + msg);
-      })
-  }  
+      // Load emscripten and the ROM
+      const uz = new Unzip();
+      emulator.loadEmscriptenModule()
+        .then(() => new FetchAppData(rom).fetch())
+        .then(response => response.blob())
+        .then(blob => uz.unzip(blob, [".nes", ".fds", ".nsf", ".unf", ".nez", ".unif"]))
+        .then(blob => new Response(blob).arrayBuffer())
+        .then(bytes => emulator.setRom(
+          pal,
+          uz.getName() ? uz.getName() : UrlUtil.getFileName(rom),
+          bytes))
+        .then(() => this.setState({ mode: ModeEnum.LOADED }))
+        .catch(msg => {
+          console.error(msg); // TODO: Proper logging
+          this.exit(Resources.getText(TEXT_IDS.ERROR_RETRIEVING_GAME));
+        })
+    } catch (e) {
+      this.exit(e);
+    }
+  }
 
   async onPreExit() {
     try {
@@ -58,13 +69,13 @@ class App extends WebrcadeApp {
       // Start the emulator
       emulator.start(canvas);
     }
-  }  
+  }
 
   renderCanvas() {
     return (
       <div id="screen-wrapper">
-        <canvas ref={canvas => { this.canvas = canvas;}} id="screen"></canvas>
-      </div>      
+        <canvas ref={canvas => { this.canvas = canvas; }} id="screen"></canvas>
+      </div>
     );
   }
 
@@ -74,6 +85,7 @@ class App extends WebrcadeApp {
 
     return (
       <>
+        { super.render()}
         { mode === ModeEnum.LOADING ? this.renderLoading() : null}
         { mode === ModeEnum.LOADED ? this.renderCanvas() : null}
       </>
