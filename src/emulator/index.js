@@ -43,6 +43,7 @@ export class Emulator {
     this.started = false;
     this.debug = debug;    
     this.storage = new Storage();
+    this.paused = false;
   }
 
   detectPal(filename) {
@@ -88,6 +89,22 @@ export class Emulator {
     let bits = 0;
     for (let i = 0; i < 2; i++) {      
       let input = 0;
+
+      if (controllers.isControlDown(i, CIDS.ESCAPE)) {
+        if (this.pause(true)) {
+          controllers.waitUntilControlReleased(i, CIDS.ESCAPE)
+            .then(() => controllers.setEnabled(false))
+            .then(() => this.saveState())
+            .then(() => { app.pause(() => { 
+                controllers.setEnabled(true);
+                this.pause(false);                 
+              }); 
+            })
+            .catch((e) => console.error(e))
+          return;
+        }
+      }
+
       if (controllers.isControlDown(i, CIDS.UP)) {
         input |= CONTROLS.INPUT_UP;
       }
@@ -112,9 +129,6 @@ export class Emulator {
       if (controllers.isControlDown(i, CIDS.START)) {
         input |= CONTROLS.INPUT_START;
       }
-      if (controllers.isControlDown(i, CIDS.ESCAPE)) {
-        app.exit();
-      }            
       bits |= input << (i<<3);
     }
     fceux.setControllerBits(bits);
@@ -147,6 +161,16 @@ export class Emulator {
     });
   }
 
+  pause(p) {
+    if ((p && !this.paused) || (!p && this.paused)) {
+      this.paused = p;
+      this.displayLoop.pause(p);
+      this.audioProcessor.pause(p);
+      return true;
+    }
+    return false;
+  }  
+
   async saveState() {
     const { fceux, started, saveStatePath, storage } = this;
     if (!started) {
@@ -160,6 +184,7 @@ export class Emulator {
       if (sram.length === 0) {
         return;
       }
+      console.log('saving sram.');
       await storage.put(saveStatePath, sram);
     }
   }
@@ -204,8 +229,9 @@ export class Emulator {
     audioChannels[0] = fceux.getAudioBuffer();    
 
     this.visibilityMonitor = new VisibilityChangeMonitor((p) => {
-      this.displayLoop.pause(p);
-      this.audioProcessor.pause(p);
+      if (!app.isPauseScreen()) {
+        this.pause(p);
+      }    
     });
 
     // audio
