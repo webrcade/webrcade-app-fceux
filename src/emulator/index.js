@@ -6,7 +6,8 @@ import {
   DisplayLoop,
   ScriptAudioProcessor,
   VisibilityChangeMonitor,
-  Storage
+  Storage,
+  hideInactiveMouse
 } from "@webrcade/app-common"
 
 const CONTROLS = {
@@ -192,6 +193,8 @@ export class Emulator {
   async start(canvas) {
     const { fceux, audioChannels, romBytes, pal, app, storage } = this;
     this.canvas = canvas;
+
+    hideInactiveMouse(canvas);
 
     if (this.started) return;
     this.started = true;
