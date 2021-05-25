@@ -1,13 +1,7 @@
 import {
   CIDS,
-  Controller,
-  Controllers,
-  DefaultKeyCodeToControlMapping,
   DisplayLoop,
-  ScriptAudioProcessor,
-  VisibilityChangeMonitor,
-  Storage,
-  hideInactiveMouse
+  AppWrapper
 } from "@webrcade/app-common"
 
 const CONTROLS = {
@@ -23,28 +17,16 @@ const CONTROLS = {
 
 const SRAM_NAME = 'rom.sav';
 
-export class Emulator {
+export class Emulator extends AppWrapper {
   constructor(app, debug = false) {
-    this.controllers = new Controllers([
-      new Controller(new DefaultKeyCodeToControlMapping()),
-      new Controller()
-    ]);
+    super(app, debug);
 
-    this.app = app;
     this.fceux = null;
     this.romBytes = null;
     this.romName = null;
     this.pal = null;
     this.saveStatePath = null;
-
     this.audioChannels = new Array(1);
-    this.audioProcessor = null;
-    this.displayLoop = null;
-    this.visibilityMonitor = null;
-    this.started = false;
-    this.debug = debug;    
-    this.storage = new Storage();
-    this.paused = false;
   }
 
   detectPal(filename) {
@@ -82,8 +64,12 @@ export class Emulator {
     console.log('pal: ' + this.pal);
   }
 
+  async onShowPauseMenu() {
+    await this.saveState();
+  }
+
   pollControls() {
-    const { controllers, fceux, app } = this;
+    const { controllers, fceux } = this;
 
     controllers.poll();
     
@@ -94,14 +80,7 @@ export class Emulator {
       if (controllers.isControlDown(i, CIDS.ESCAPE)) {
         if (this.pause(true)) {
           controllers.waitUntilControlReleased(i, CIDS.ESCAPE)
-            .then(() => controllers.setEnabled(false))
-            .then(() => this.saveState())
-            .then(() => { app.pause(() => { 
-                controllers.setEnabled(true);
-                this.pause(false);                 
-              }); 
-            })
-            .catch((e) => console.error(e))
+            .then(() => this.showPauseMenu());
           return;
         }
       }
@@ -162,15 +141,22 @@ export class Emulator {
     });
   }
 
-  pause(p) {
-    if ((p && !this.paused) || (!p && this.paused)) {
-      this.paused = p;
-      this.displayLoop.pause(p);
-      this.audioProcessor.pause(p);
-      return true;
+  async loadState() {
+    const { fceux, storage } = this;    
+
+    // Load the save state (if applicable)
+    try {
+      const sram = await storage.get(this.saveStatePath);
+      if (sram) {
+        const saves = {};
+        saves[SRAM_NAME] = sram;
+        fceux.importSaveFiles(saves);
+      }
+    } catch (e) {
+      // TODO: Proper logging
+      console.error("Error loading save state: " + e);
     }
-    return false;
-  }  
+  }
 
   async saveState() {
     const { fceux, started, saveStatePath, storage } = this;
@@ -190,34 +176,18 @@ export class Emulator {
     }
   }
 
-  async start(canvas) {
-    const { fceux, audioChannels, romBytes, pal, app, storage } = this;
-    this.canvas = canvas;
-
-    hideInactiveMouse(canvas);
-
-    if (this.started) return;
-    this.started = true;
+  async onStart(canvas) {
+    const { fceux, audioChannels, romBytes, pal, app } = this;
 
     // Initialize the instance
     fceux.init('#screen');
 
     // Load the game
     fceux.loadGame(new Uint8Array(romBytes));
-    this.saveStatePath = app.getStoragePath(`${fceux.gameMd5()}/sav`);
 
-    // Load the save state (if applicable)
-    try {
-      const sram = await storage.get(this.saveStatePath);
-      if (sram) {
-        const saves = {};
-        saves[SRAM_NAME] = sram;
-        fceux.importSaveFiles(saves);
-      }
-    } catch (e) {
-      // TODO: Proper logging
-      console.error("Error loading save state: " + e);
-    }
+    // Load the save state
+    this.saveStatePath = app.getStoragePath(`${fceux.gameMd5()}/sav`);
+    await this.loadState();
 
     // Set configuration (controls and video mode)
     fceux.setConfig('system-port-2', 'controller');
@@ -225,17 +195,10 @@ export class Emulator {
       fceux.setConfig('video-system', 'pal');
     }
 
-    // Create loop and audio processor
-    this.audioProcessor = new ScriptAudioProcessor(1);
+    // Create display loop
     this.displayLoop = new DisplayLoop(pal ? 50 : 60, true, this.debug);
     window.fceux = fceux; // TODO: Fix this
     audioChannels[0] = fceux.getAudioBuffer();    
-
-    this.visibilityMonitor = new VisibilityChangeMonitor((p) => {
-      if (!app.isPauseScreen()) {
-        this.pause(p);
-      }    
-    });
 
     // audio
     this.audioProcessor.start();
@@ -243,6 +206,7 @@ export class Emulator {
     // game loop
     const audioProcessor = this.audioProcessor;
 
+    // Start the game loop
     this.displayLoop.start(() => {
       const samples = fceux.update();
       audioProcessor.storeSound(audioChannels, samples);
