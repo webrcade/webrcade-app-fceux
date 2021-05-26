@@ -1,6 +1,7 @@
 import {
   CIDS,
   DisplayLoop,
+  ScriptAudioProcessor,
   AppWrapper
 } from "@webrcade/app-common"
 
@@ -62,6 +63,10 @@ export class Emulator extends AppWrapper {
     }
     console.log('name: ' + this.romName);
     console.log('pal: ' + this.pal);
+  }
+
+  createAudioProcessor() {
+    return new ScriptAudioProcessor(1);
   }
 
   async onShowPauseMenu() {
@@ -196,9 +201,9 @@ export class Emulator extends AppWrapper {
     }
 
     // Create display loop
-    this.displayLoop = new DisplayLoop(pal ? 50 : 60, true, this.debug);
+    this.displayLoop = new DisplayLoop(pal ? 50 : 60, true, this.debug);        
     window.fceux = fceux; // TODO: Fix this
-    audioChannels[0] = fceux.getAudioBuffer();    
+    audioChannels[0] = fceux.getAudioBuffer();
 
     // audio
     this.audioProcessor.start();
