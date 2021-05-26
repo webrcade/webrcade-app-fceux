@@ -1,1 +1,1 @@
-# webЯcade EM FCEUX
+# webЯcade fceux
