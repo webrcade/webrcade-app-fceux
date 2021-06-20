@@ -1,8 +1,9 @@
 import {
-  CIDS,
+  AppWrapper,
   DisplayLoop,
-  ScriptAudioProcessor,
-  AppWrapper
+  ScriptAudioProcessor,  
+  LOG,
+  CIDS
 } from "@webrcade/app-common"
 
 const CONTROLS = {
@@ -61,8 +62,8 @@ export class Emulator extends AppWrapper {
     if (this.pal === null || this.pal === undefined) {
       this.pal = this.detectPal(name);
     }
-    console.log('name: ' + this.romName);
-    console.log('pal: ' + this.pal);
+    LOG.info('name: ' + this.romName);
+    LOG.info('pal: ' + this.pal);
   }
 
   createAudioProcessor() {
@@ -158,13 +159,12 @@ export class Emulator extends AppWrapper {
         fceux.importSaveFiles(saves);
       }
     } catch (e) {
-      // TODO: Proper logging
-      console.error("Error loading save state: " + e);
+      LOG.error("Error loading save state: " + e);
     }
   }
 
   async saveState() {
-    const { fceux, started, saveStatePath, storage } = this;
+    const { fceux, saveStatePath, started, storage } = this;
     if (!started) {
       return;
     }
@@ -176,13 +176,13 @@ export class Emulator extends AppWrapper {
       if (sram.length === 0) {
         return;
       }
-      console.log('saving sram.');
+      LOG.info('saving sram.');
       await storage.put(saveStatePath, sram);
     }
   }
 
   async onStart(canvas) {
-    const { fceux, audioChannels, romBytes, pal, app } = this;
+    const { app, audioChannels, fceux, pal, romBytes } = this;
 
     // Initialize the instance
     fceux.init('#screen');

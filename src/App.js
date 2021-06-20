@@ -1,9 +1,10 @@
 import {
-  WebrcadeApp, 
   FetchAppData, 
+  Resources, 
   Unzip, 
   UrlUtil, 
-  Resources, 
+  WebrcadeApp, 
+  LOG,
   TEXT_IDS 
 } from '@webrcade/app-common'
 import { Emulator } from './emulator'
@@ -42,7 +43,7 @@ class App extends WebrcadeApp {
           bytes))
         .then(() => this.setState({ mode: ModeEnum.LOADED }))
         .catch(msg => {
-          console.error(msg); // TODO: Proper logging
+          LOG.error(msg);
           this.exit(Resources.getText(TEXT_IDS.ERROR_RETRIEVING_GAME));
         })
     } catch (e) {
@@ -55,8 +56,7 @@ class App extends WebrcadeApp {
       await super.onPreExit();
       await this.emulator.saveState();
     } catch (e) {
-      // TODO: Proper logging
-      console.error(e);
+      LOG.error(e);
     }
   }
 
