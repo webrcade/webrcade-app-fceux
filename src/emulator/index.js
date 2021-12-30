@@ -67,7 +67,7 @@ export class Emulator extends AppWrapper {
   }
 
   createAudioProcessor() {
-    return new ScriptAudioProcessor(1);
+    return new ScriptAudioProcessor(1).setDebug(this.debug);
   }
 
   async onShowPauseMenu() {
