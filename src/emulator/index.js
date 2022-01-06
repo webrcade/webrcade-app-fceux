@@ -164,7 +164,7 @@ export class Emulator extends AppWrapper {
   }
 
   async saveState() {
-    const { fceux, saveStatePath, started, storage } = this;
+    const { fceux, saveStatePath, started } = this;
     if (!started) {
       return;
     }
@@ -177,7 +177,7 @@ export class Emulator extends AppWrapper {
         return;
       }
       LOG.info('saving sram.');
-      await storage.put(saveStatePath, sram);
+      await this.saveStateToStorage(saveStatePath, sram);
     }
   }
 
