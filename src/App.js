@@ -83,9 +83,7 @@ class App extends WebrcadeApp {
 
   renderCanvas() {
     return (
-      <div id="screen-wrapper">
-        <canvas ref={canvas => { this.canvas = canvas; }} id="screen"></canvas>
-      </div>
+      <canvas ref={canvas => { this.canvas = canvas; }} id="screen"></canvas>
     );
   }
 

@@ -60,11 +60,10 @@ if 'EMSCRIPTEN_TOOL_PATH' in os.environ:
   common = '-s STRICT=1 -fno-exceptions -fno-rtti -fno-c++-static-destructors -s DISABLE_EXCEPTION_CATCHING=1'
   common += ' --bind -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0'
   common += ' -s MODULARIZE=1 -s EXPORT_NAME=FCEUX -s INVOKE_RUN=0 --post-js src/drivers/em/post.js'
-  common += ' -s USE_SDL=0 -s USE_SDL_IMAGE=0 -s USE_SDL_TTF=0 -s USE_SDL_NET=0 -s USE_SDL_MIXER=0'
-  common += ' -s GL_EMULATE_GLES_VERSION_STRING_FORMAT=0 -s GL_EXTENSIONS_IN_PREFIXED_FORMAT=0 -s GL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0 -s GL_SUPPORT_SIMPLE_ENABLE_EXTENSIONS=0'
   # common += ' -s EXPORTED_FUNCTIONS=\'["_audioBufferCallback"]\''
   env.Append(CCFLAGS = common, LINKFLAGS = common)
-  env.Append(LINKFLAGS = '--no-entry --embed-file src/drivers/em/assets/data/@/data/')
+  env.Append(LINKFLAGS = '--no-entry')
+  # env.Append(LINKFLAGS = '--no-entry --embed-file src/drivers/em/assets/data/@/data/')
 else:
   env['EMSCRIPTEN'] = 0
 
@@ -205,11 +204,11 @@ else:
       env['LOGO'] = 0
       print('Did not find libgd, you won\'t be able to create a logo screen for your avis.')
 
-  if env['EMSCRIPTEN']:
-    conf.env.Append(CCFLAGS = "-DOPENGL")
-    env.Append(LIBS = ["GL"])
-  elif env['OPENGL'] and conf.CheckLibWithHeader('GL', 'GL/gl.h', 'c', autoadd=1):
-    conf.env.Append(CCFLAGS = "-DOPENGL")
+  # if env['EMSCRIPTEN']:
+  #   conf.env.Append(CCFLAGS = "-DOPENGL")
+  #   env.Append(LIBS = ["GL"])
+  # elif env['OPENGL'] and conf.CheckLibWithHeader('GL', 'GL/gl.h', 'c', autoadd=1):
+  #   conf.env.Append(CCFLAGS = "-DOPENGL")
   conf.env.Append(CPPDEFINES = ['PSS_STYLE=1'])
 
   env = conf.Finish()
