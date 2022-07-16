@@ -203,7 +203,6 @@ static bool System_Init(const std::string& canvasQuerySelector)
     // TODO: Use the new PPU? Last time tried it didn't work...
     newppu = 0;
 
-    Video_Init(canvasQuerySelector.c_str());
     Audio_Init();
 
     // Set default config and create Web Audio context.
@@ -236,14 +235,15 @@ static void UpdateZapper()
     }
 }
 
+extern uint8 *XBuf;
+extern void BlitScreen(uint8 *XBuf);
+
 static int System_Update()
 {
     int ret = 0;
     if (GameInfo) {
         ret = EmulateFrame(0);
-        Video_Render(0);        
-    } else {
-        Video_Render(1);
+	    if(XBuf) BlitScreen(XBuf);
     }
 
     UpdateFrameAdvance();
@@ -315,7 +315,7 @@ static void System_TriggerZapper(int x, int y)
     em_zapper[1] = y;
     em_zapper[2] = 1;
 
-    Video_CanvasToNESCoords(&em_zapper[0], &em_zapper[1]);
+//    Video_CanvasToNESCoords(&em_zapper[0], &em_zapper[1]);
 
     em_zapper_hold_counter = ZAPPER_HOLD_FRAMES;
 }
