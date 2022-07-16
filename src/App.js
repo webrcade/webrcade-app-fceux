@@ -1,14 +1,15 @@
 import {
   romNameScorer,
+  settings,
   AppRegistry,
-  FetchAppData, 
-  Resources, 
-  Unzip, 
-  UrlUtil, 
-  WebrcadeApp, 
+  FetchAppData,
+  Resources,
+  Unzip,
+  UrlUtil,
+  WebrcadeApp,
   APP_TYPE_KEYS,
   LOG,
-  TEXT_IDS 
+  TEXT_IDS
 } from '@webrcade/app-common'
 import { Emulator } from './emulator'
 
@@ -26,12 +27,12 @@ class App extends WebrcadeApp {
     }
 
     const { appProps, emulator, ModeEnum } = this;
-    
+
     // Determine extensions
     // [".nes", ".fds", ".nsf", ".unf", ".nez", ".unif"], future...
-    const exts = 
+    const exts =
       AppRegistry.instance.getExtensions(APP_TYPE_KEYS.FCEUX, true, false);
-    const extsNotUnique = 
+    const extsNotUnique =
       AppRegistry.instance.getExtensions(APP_TYPE_KEYS.FCEUX, true, true);
 
     try {
@@ -43,6 +44,8 @@ class App extends WebrcadeApp {
       // Load emscripten and the ROM
       const uz = new Unzip().setDebug(this.isDebug());
       emulator.loadEmscriptenModule()
+        .then(() => settings.load())
+        // .then(() => settings.setBilinearFilterEnabled(true))
         .then(() => new FetchAppData(rom).fetch())
         .then(response => response.blob())
         .then(blob => uz.unzip(blob, extsNotUnique, exts, romNameScorer))
@@ -84,7 +87,7 @@ class App extends WebrcadeApp {
   renderCanvas() {
     return (
       <div id="screen-wrapper">
-        <canvas ref={canvas => { this.canvas = canvas; }} id="screen"></canvas>
+        <canvas style={this.getCanvasStyles()} ref={canvas => { this.canvas = canvas; }} id="screen"></canvas>
       </div>
     );
   }
@@ -97,7 +100,7 @@ class App extends WebrcadeApp {
       <>
         { super.render()}
         { mode === ModeEnum.LOADING ? this.renderLoading() : null}
-        { mode === ModeEnum.PAUSE ? this.renderPauseScreen() : null}        
+        { mode === ModeEnum.PAUSE ? this.renderPauseScreen() : null}
         { mode === ModeEnum.LOADED || mode === ModeEnum.PAUSE  ? this.renderCanvas() : null}
       </>
     );
