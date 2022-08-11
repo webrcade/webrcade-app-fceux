@@ -1,9 +1,9 @@
 import {
   AppWrapper,
   DisplayLoop,
-  ScriptAudioProcessor,  
+  ScriptAudioProcessor,
   LOG,
-  CIDS
+  CIDS,
 } from "@webrcade/app-common"
 
 const CONTROLS = {
@@ -18,6 +18,7 @@ const CONTROLS = {
 }
 
 const SRAM_NAME = 'rom.sav';
+const SAVE_NAME = 'sav';
 
 export class Emulator extends AppWrapper {
   constructor(app, debug = false) {
@@ -44,7 +45,7 @@ export class Emulator extends AppWrapper {
       "(d)", "(f)", "(g)",
       "(gr)", "(i)", "(nl)",
       "(no)", "(r)", "(s)",
-      "(sw)", "(uk)"  
+      "(sw)", "(uk)"
     ];
 
     filename = filename.toLowerCase();
@@ -83,9 +84,9 @@ export class Emulator extends AppWrapper {
     const { controllers, fceux } = this;
 
     controllers.poll();
-    
+
     let bits = 0;
-    for (let i = 0; i < 2; i++) {      
+    for (let i = 0; i < 2; i++) {
       let input = 0;
 
       if (controllers.isControlDown(i, CIDS.ESCAPE)) {
@@ -138,9 +139,9 @@ export class Emulator extends AppWrapper {
         if (esmodule) {
           esmodule()
             .then(fceux => {
-              this.fceux = fceux; 
+              this.fceux = fceux;
               fceux.onAbort = msg => app.exit(msg);
-              fceux.onExit = () => app.exit();              
+              fceux.onExit = () => app.exit();
               return fceux;
             })
             .then(fceux => resolve(fceux))
@@ -152,42 +153,90 @@ export class Emulator extends AppWrapper {
     });
   }
 
+  async migrateSaves() {
+    const { storage} = this;
+
+    // Load old saves (if applicable)
+    const sram = await storage.get(this.saveStatePath);
+    if (sram) {
+      LOG.info("Migrating local saves.");
+
+      await this.getSaveManager().saveLocal(this.saveStatePath, [{
+        name: SAVE_NAME,
+        content: sram
+      }]);
+
+      // Delete old location (and info)
+      await storage.remove(this.saveStatePath);
+      await storage.remove(`${this.saveStatePath}/info`);
+    }
+  }
+
   async loadState() {
-    const { fceux, storage } = this;    
+    const { fceux } = this;
 
     // Load the save state (if applicable)
     try {
-      const sram = await storage.get(this.saveStatePath);
-      if (sram) {
-        const saves = {};
-        saves[SRAM_NAME] = sram;
-        fceux.importSaveFiles(saves);
+      // Migrate old save format
+      await this.migrateSaves();
+
+      // Load from new save format
+      const files = await this.getSaveManager().load(this.saveStatePath,
+        this.loadMessageCallback);
+
+      if (files) {
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          if (f.name === SAVE_NAME) {
+            const sram = f.content;
+            const saves = {};
+            saves[SRAM_NAME] = sram;
+            fceux.importSaveFiles(saves);
+            break;
+          }
+        }
       }
     } catch (e) {
       LOG.error("Error loading save state: " + e);
     }
   }
 
+  async saveInOldFormat(sram) {
+    const { saveStatePath } = this;
+    // old, for testing migration
+    await this.saveStateToStorage(saveStatePath, sram);
+  }
+
   async saveState() {
     const { fceux, saveStatePath, started } = this;
-    if (!started) {
-      return;
-    }
 
-    const result = fceux.exportSaveFiles();
-    if (saveStatePath && result !== undefined && 
-      result[SRAM_NAME] !== undefined) {
-      const sram = result[SRAM_NAME];
-      if (sram.length === 0) {
+    try {
+      if (!started) {
         return;
       }
-      LOG.info('saving sram.');
-      await this.saveStateToStorage(saveStatePath, sram);
+
+      const result = fceux.exportSaveFiles();
+      if (saveStatePath && result !== undefined &&
+        result[SRAM_NAME] !== undefined) {
+        const sram = result[SRAM_NAME];
+        if (sram.length === 0) {
+          return;
+        }
+        LOG.info('saving sram.');
+
+        //await this.saveInOldFormat(sram);
+        await this.getSaveManager().save(this.saveStatePath, [{
+          name: SAVE_NAME,
+          content: sram
+        }], this.saveMessageCallback);
+      }
+    } catch (e) {
+      LOG.error("Error persisting save state: " + e);
     }
   }
 
   async onStart(canvas) {
-    const { app, audioChannels, fceux, pal, romBytes } = this;
+    const { app, audioChannels, fceux, pal, romBytes} = this;
 
     this.canvas = canvas;
 
@@ -198,7 +247,7 @@ export class Emulator extends AppWrapper {
     fceux.loadGame(new Uint8Array(romBytes));
 
     // Load the save state
-    this.saveStatePath = app.getStoragePath(`${fceux.gameMd5()}/sav`);
+    this.saveStatePath = app.getStoragePath(`${fceux.gameMd5()}/${SAVE_NAME}`);
     await this.loadState();
 
     // Set configuration (controls and video mode)
@@ -211,7 +260,7 @@ export class Emulator extends AppWrapper {
     this.initVideo(canvas);
 
     // Create display loop
-    this.displayLoop = new DisplayLoop(pal ? 50 : 60, true, this.debug);        
+    this.displayLoop = new DisplayLoop(pal ? 50 : 60, true, this.debug);
     window.fceux = fceux; // TODO: Fix this
     audioChannels[0] = fceux.getAudioBuffer();
 
@@ -242,13 +291,13 @@ export class Emulator extends AppWrapper {
       imageData[i++] = 0xFF;
     }
     this.context.putImageData(image, 0, 0);
-  }  
+  }
 
   initVideo(canvas) {
     const { pal, NES_WIDTH, NES_HEIGHT, PIXEL_COUNT } = this;
 
     canvas.width = 255;
-    canvas.height = pal ? 240 : 224;    
+    canvas.height = pal ? 240 : 224;
     this.context = this.canvas.getContext("2d");
     this.image = this.context.getImageData(0, 0, NES_WIDTH, NES_HEIGHT);
     this.imageData = this.image.data;
@@ -283,7 +332,7 @@ export class Emulator extends AppWrapper {
   }
 
   drawScreen(buff) {
-    const { fceux, image, imageData, pal, palette, PIXEL_COUNT } = this;    
+    const { fceux, image, imageData, pal, palette, PIXEL_COUNT } = this;
     const b = new Uint8Array(fceux.HEAP8.buffer, buff, PIXEL_COUNT);
     let index = 0;
     let line = 0;
