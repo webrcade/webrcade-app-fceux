@@ -4,7 +4,7 @@ import {
   ScriptAudioProcessor,
   LOG,
   CIDS,
-} from "@webrcade/app-common"
+} from '@webrcade/app-common';
 
 const CONTROLS = {
   INPUT_A: 0x01,
@@ -14,8 +14,8 @@ const CONTROLS = {
   INPUT_UP: 0x10,
   INPUT_DOWN: 0x20,
   INPUT_LEFT: 0x40,
-  INPUT_RIGHT: 0x80
-}
+  INPUT_RIGHT: 0x80,
+};
 
 const SRAM_NAME = 'rom.sav';
 const SAVE_NAME = 'sav';
@@ -41,11 +41,20 @@ export class Emulator extends AppWrapper {
     if (!filename) return false;
 
     const SEARCH = [
-      "(pal)", "(e)", "(europe)",
-      "(d)", "(f)", "(g)",
-      "(gr)", "(i)", "(nl)",
-      "(no)", "(r)", "(s)",
-      "(sw)", "(uk)"
+      '(pal)',
+      '(e)',
+      '(europe)',
+      '(d)',
+      '(f)',
+      '(g)',
+      '(gr)',
+      '(i)',
+      '(nl)',
+      '(no)',
+      '(r)',
+      '(s)',
+      '(sw)',
+      '(uk)',
     ];
 
     filename = filename.toLowerCase();
@@ -60,7 +69,7 @@ export class Emulator extends AppWrapper {
 
   setRom(pal, name, bytes) {
     if (bytes.byteLength === 0) {
-      throw new Error("The size is invalid (0 bytes).");
+      throw new Error('The size is invalid (0 bytes).');
     }
     this.romName = name;
     this.romBytes = bytes;
@@ -91,7 +100,8 @@ export class Emulator extends AppWrapper {
 
       if (controllers.isControlDown(i, CIDS.ESCAPE)) {
         if (this.pause(true)) {
-          controllers.waitUntilControlReleased(i, CIDS.ESCAPE)
+          controllers
+            .waitUntilControlReleased(i, CIDS.ESCAPE)
             .then(() => this.showPauseMenu());
           return;
         }
@@ -99,20 +109,24 @@ export class Emulator extends AppWrapper {
 
       if (controllers.isControlDown(i, CIDS.UP)) {
         input |= CONTROLS.INPUT_UP;
-      }
-      else if (controllers.isControlDown(i, CIDS.DOWN)) {
+      } else if (controllers.isControlDown(i, CIDS.DOWN)) {
         input |= CONTROLS.INPUT_DOWN;
       }
       if (controllers.isControlDown(i, CIDS.RIGHT)) {
         input |= CONTROLS.INPUT_RIGHT;
-      }
-      else if (controllers.isControlDown(i, CIDS.LEFT)) {
+      } else if (controllers.isControlDown(i, CIDS.LEFT)) {
         input |= CONTROLS.INPUT_LEFT;
       }
-      if (controllers.isControlDown(i, CIDS.B) || controllers.isControlDown(i, CIDS.X) ) {
+      if (
+        controllers.isControlDown(i, CIDS.B) ||
+        controllers.isControlDown(i, CIDS.X)
+      ) {
         input |= CONTROLS.INPUT_A;
       }
-      if (controllers.isControlDown(i, CIDS.A) || controllers.isControlDown(i, CIDS.Y)) {
+      if (
+        controllers.isControlDown(i, CIDS.A) ||
+        controllers.isControlDown(i, CIDS.Y)
+      ) {
         input |= CONTROLS.INPUT_B;
       }
       if (controllers.isControlDown(i, CIDS.SELECT)) {
@@ -121,7 +135,7 @@ export class Emulator extends AppWrapper {
       if (controllers.isControlDown(i, CIDS.START)) {
         input |= CONTROLS.INPUT_START;
       }
-      bits |= input << (i<<3);
+      bits |= input << (i << 3);
     }
     fceux.setControllerBits(bits);
   }
@@ -138,14 +152,14 @@ export class Emulator extends AppWrapper {
         const esmodule = window.FCEUX;
         if (esmodule) {
           esmodule()
-            .then(fceux => {
+            .then((fceux) => {
               this.fceux = fceux;
-              fceux.onAbort = msg => app.exit(msg);
+              fceux.onAbort = (msg) => app.exit(msg);
               fceux.onExit = () => app.exit();
               return fceux;
             })
-            .then(fceux => resolve(fceux))
-            .catch(error => reject(error));
+            .then((fceux) => resolve(fceux))
+            .catch((error) => reject(error));
         } else {
           reject('An error occurred loading the FCEUX Emscripten module');
         }
@@ -154,17 +168,19 @@ export class Emulator extends AppWrapper {
   }
 
   async migrateSaves() {
-    const { storage} = this;
+    const { storage } = this;
 
     // Load old saves (if applicable)
     const sram = await storage.get(this.saveStatePath);
     if (sram) {
-      LOG.info("Migrating local saves.");
+      LOG.info('Migrating local saves.');
 
-      await this.getSaveManager().saveLocal(this.saveStatePath, [{
-        name: SAVE_NAME,
-        content: sram
-      }]);
+      await this.getSaveManager().saveLocal(this.saveStatePath, [
+        {
+          name: SAVE_NAME,
+          content: sram,
+        },
+      ]);
 
       // Delete old location (and info)
       await storage.remove(this.saveStatePath);
@@ -181,8 +197,10 @@ export class Emulator extends AppWrapper {
       await this.migrateSaves();
 
       // Load from new save format
-      const files = await this.getSaveManager().load(this.saveStatePath,
-        this.loadMessageCallback);
+      const files = await this.getSaveManager().load(
+        this.saveStatePath,
+        this.loadMessageCallback,
+      );
 
       if (files) {
         for (let i = 0; i < files.length; i++) {
@@ -197,7 +215,7 @@ export class Emulator extends AppWrapper {
         }
       }
     } catch (e) {
-      LOG.error("Error loading save state: " + e);
+      LOG.error('Error loading save state: ' + e);
     }
   }
 
@@ -216,8 +234,11 @@ export class Emulator extends AppWrapper {
       }
 
       const result = fceux.exportSaveFiles();
-      if (saveStatePath && result !== undefined &&
-        result[SRAM_NAME] !== undefined) {
+      if (
+        saveStatePath &&
+        result !== undefined &&
+        result[SRAM_NAME] !== undefined
+      ) {
         const sram = result[SRAM_NAME];
         if (sram.length === 0) {
           return;
@@ -225,18 +246,24 @@ export class Emulator extends AppWrapper {
         LOG.info('saving sram.');
 
         //await this.saveInOldFormat(sram);
-        await this.getSaveManager().save(this.saveStatePath, [{
-          name: SAVE_NAME,
-          content: sram
-        }], this.saveMessageCallback);
+        await this.getSaveManager().save(
+          this.saveStatePath,
+          [
+            {
+              name: SAVE_NAME,
+              content: sram,
+            },
+          ],
+          this.saveMessageCallback,
+        );
       }
     } catch (e) {
-      LOG.error("Error persisting save state: " + e);
+      LOG.error('Error persisting save state: ' + e);
     }
   }
 
   async onStart(canvas) {
-    const { app, audioChannels, fceux, pal, romBytes} = this;
+    const { app, audioChannels, fceux, pal, romBytes } = this;
 
     this.canvas = canvas;
 
@@ -284,11 +311,11 @@ export class Emulator extends AppWrapper {
   palette = new Array(256);
 
   clearImageData(image, imageData, pixelCount) {
-    for (var i = 0; i < (pixelCount * 4);) {
+    for (var i = 0; i < pixelCount * 4; ) {
       imageData[i++] = 0;
       imageData[i++] = 0;
       imageData[i++] = 0;
-      imageData[i++] = 0xFF;
+      imageData[i++] = 0xff;
     }
     this.context.putImageData(image, 0, 0);
   }
@@ -298,7 +325,7 @@ export class Emulator extends AppWrapper {
 
     canvas.width = 255;
     canvas.height = pal ? 240 : 224;
-    this.context = this.canvas.getContext("2d");
+    this.context = this.canvas.getContext('2d');
     this.image = this.context.getImageData(0, 0, NES_WIDTH, NES_HEIGHT);
     this.imageData = this.image.data;
     this.clearImageData(this.image, this.imageData, PIXEL_COUNT);
@@ -306,22 +333,25 @@ export class Emulator extends AppWrapper {
 
   applyDefaultPalette() {
     const UNSAT_FINAL = [
-      0x676767, 0x001F8E, 0x23069E, 0x40008E, 0x600067, 0x67001C, 0x5B1000, 0x432500, 0x313400, 0x074800,
-      0x004F00, 0x004622, 0x003A61, 0x000000, 0x000000, 0x000000, 0xB3B3B3, 0x205ADF, 0x5138FB, 0x7A27EE,
-      0xA520C2, 0xB0226B, 0xAD3702, 0x8D5600, 0x6E7000, 0x2E8A00, 0x069200, 0x008A47, 0x037B9B, 0x101010,
-      0x000000, 0x000000, 0xFFFFFF, 0x62AEFF, 0x918BFF, 0xBC78FF, 0xE96EFF, 0xFC6CCD, 0xFA8267, 0xE29B26,
-      0xC0B901, 0x84D200, 0x58DE38, 0x46D97D, 0x49CED2, 0x494949, 0x000000, 0x000000, 0xFFFFFF, 0xC1E3FF,
-      0xD5D4FF, 0xE7CCFF, 0xFBC9FF, 0xFFC7F0, 0xFFD0C5, 0xF8DAAA, 0xEBE69A, 0xD1F19A, 0xBEF7AF, 0xB6F4CD,
-      0xB7F0EF, 0xB2B2B2, 0x000000, 0x000000,
-    ]
+      0x676767, 0x001f8e, 0x23069e, 0x40008e, 0x600067, 0x67001c, 0x5b1000,
+      0x432500, 0x313400, 0x074800, 0x004f00, 0x004622, 0x003a61, 0x000000,
+      0x000000, 0x000000, 0xb3b3b3, 0x205adf, 0x5138fb, 0x7a27ee, 0xa520c2,
+      0xb0226b, 0xad3702, 0x8d5600, 0x6e7000, 0x2e8a00, 0x069200, 0x008a47,
+      0x037b9b, 0x101010, 0x000000, 0x000000, 0xffffff, 0x62aeff, 0x918bff,
+      0xbc78ff, 0xe96eff, 0xfc6ccd, 0xfa8267, 0xe29b26, 0xc0b901, 0x84d200,
+      0x58de38, 0x46d97d, 0x49ced2, 0x494949, 0x000000, 0x000000, 0xffffff,
+      0xc1e3ff, 0xd5d4ff, 0xe7ccff, 0xfbc9ff, 0xffc7f0, 0xffd0c5, 0xf8daaa,
+      0xebe69a, 0xd1f19a, 0xbef7af, 0xb6f4cd, 0xb7f0ef, 0xb2b2b2, 0x000000,
+      0x000000,
+    ];
 
     for (let i = 0; i < UNSAT_FINAL.length; i++) {
       const c = UNSAT_FINAL[i];
       this.palette[128 + i] = [
-        ((c & 0xFF0000) >> 16) & 0xFF,
-        ((c & 0xFF00) >> 8) & 0xFF,
-        c & 0xFF
-      ]
+        ((c & 0xff0000) >> 16) & 0xff,
+        ((c & 0xff00) >> 8) & 0xff,
+        c & 0xff,
+      ];
     }
   }
 
@@ -337,7 +367,7 @@ export class Emulator extends AppWrapper {
     let index = 0;
     let line = 0;
     for (let i = 0; i < PIXEL_COUNT; i++) {
-      if(pal || (line > 8 && line <= 248)) {
+      if (pal || (line > 8 && line <= 248)) {
         let c = (b[i] + 128) % 256;
         imageData[index++] = palette[c][0];
         imageData[index++] = palette[c][1];
