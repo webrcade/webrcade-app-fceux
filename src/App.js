@@ -1,5 +1,6 @@
 import {
   romNameScorer,
+  setMessageAnchorId,
   settings,
   AppRegistry,
   FetchAppData,
@@ -21,6 +22,8 @@ class App extends WebrcadeApp {
 
   componentDidMount() {
     super.componentDidMount();
+
+    setMessageAnchorId('screen');
 
     // Create the emulator
     if (this.emulator === null) {

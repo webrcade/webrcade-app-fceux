@@ -297,6 +297,9 @@ export class Emulator extends AppWrapper {
     // game loop
     const audioProcessor = this.audioProcessor;
 
+    // Enable showing messages
+    this.setShowMessageEnabled(true);
+
     // Start the game loop
     this.displayLoop.start(() => {
       const samples = fceux.update();
