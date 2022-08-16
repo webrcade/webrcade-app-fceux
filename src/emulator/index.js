@@ -213,6 +213,9 @@ export class Emulator extends AppWrapper {
             break;
           }
         }
+
+        // Cache the initial files
+        await this.getSaveManager().checkFilesChanged(files);
       }
     } catch (e) {
       LOG.error('Error loading save state: ' + e);
@@ -243,19 +246,24 @@ export class Emulator extends AppWrapper {
         if (sram.length === 0) {
           return;
         }
-        LOG.info('saving sram.');
 
-        //await this.saveInOldFormat(sram);
-        await this.getSaveManager().save(
-          this.saveStatePath,
-          [
-            {
-              name: SAVE_NAME,
-              content: sram,
-            },
-          ],
-          this.saveMessageCallback,
-        );
+        const files = [
+          {
+            name: SAVE_NAME,
+            content: sram,
+          },
+        ];
+
+        if (await this.getSaveManager().checkFilesChanged(files)) {
+          LOG.info('saving sram.');
+
+          //await this.saveInOldFormat(sram);
+          await this.getSaveManager().save(
+            this.saveStatePath,
+            files,
+            this.saveMessageCallback,
+          );
+        }
       }
     } catch (e) {
       LOG.error('Error persisting save state: ' + e);
