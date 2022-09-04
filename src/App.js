@@ -117,6 +117,7 @@ class App extends WebrcadeApp {
           this.exitFromPause();
         }}
         isEditor={this.isEditor}
+        isStandalone={this.isStandalone}
       />
     );
   }
