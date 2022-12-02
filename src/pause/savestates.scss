@@ -1,0 +1,72 @@
+.slottab {
+    // display: flex;
+    // flex-direction: row;
+    // flex-wrap: wrap;
+    // border: 1px solid red;
+    width: 80vw;
+
+    &-content {
+        flex-direction: row;
+        // background-color: black;
+        display: flex;
+        // border: 1px solid blue;
+
+        &-right {
+            width: 40vw;
+            font-size: 2rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding-top: 2rem;
+            padding-left: 2rem;
+            // justify-content: center;
+            // border: 1px solid red;
+
+            &-title {
+                font-weight: 700;
+                font-size: 1.8rem;
+                color: #CCCCCC;
+                // border: 1px solid red;
+            }
+
+            &-subtitle {
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: #777777;
+                word-break: break-all;
+                // border: 1px solid red;
+            }
+
+
+            &-buttons {
+                padding-top: 2rem;
+                padding-right: 2rem;
+                margin-bottom: 1.5rem;
+                display: flex;
+                flex-direction: row;
+                flex-shrink: 0;
+                justify-content: center;
+
+                &>button {
+                    margin-right: 1rem;
+                }
+            }
+        }
+
+        &-left {
+            padding-right:2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            width: 40vw;
+            // border: 1px solid green;
+
+            img {
+                width: 25vw;
+                border-radius: 1vw;
+                image-rendering: pixelated;
+            }
+        }
+    }
+}

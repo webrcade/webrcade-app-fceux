@@ -19,6 +19,7 @@ const CONTROLS = {
 
 const SRAM_NAME = 'rom.sav';
 const SAVE_NAME = 'sav';
+const STATE_FILE_PATH = "/tmp/state.fcs"
 
 export class Emulator extends AppWrapper {
   constructor(app, debug = false) {
@@ -29,6 +30,7 @@ export class Emulator extends AppWrapper {
     this.romBytes = null;
     this.romName = null;
     this.pal = null;
+    this.saveStatePrefix = null;
     this.saveStatePath = null;
     this.audioChannels = new Array(1);
 
@@ -270,6 +272,66 @@ export class Emulator extends AppWrapper {
     }
   }
 
+  async getStateSlots(showStatus = true) {
+    return await this.getSaveManager().getStateSlots(
+      this.saveStatePrefix, showStatus ? this.saveMessageCallback : null
+    );
+  }
+
+  async saveStateForSlot(slot) {
+    const { fceux } = this;
+
+    fceux._saveState();
+
+    let s = null;
+    try {
+
+      const FS = fceux.getFs();
+      try {
+        s = FS.readFile(STATE_FILE_PATH);
+      } catch (e) {}
+
+      if (s) {
+        await this.getSaveManager().saveState(
+          this.saveStatePrefix, slot, s,
+          this.canvas,
+          this.saveMessageCallback);
+      }
+    } catch (e) {
+      LOG.error('Error saving state: ' + e);
+    }
+
+    return true;
+  }
+
+  async loadStateForSlot(slot) {
+    const { fceux } = this;
+
+    try {
+      const state = await this.getSaveManager().loadState(
+        this.saveStatePrefix, slot, this.saveMessageCallback);
+
+      if (state) {
+        const FS = fceux.getFs();
+        FS.writeFile(STATE_FILE_PATH, state);
+        this.fceux._loadState();
+      }
+    } catch (e) {
+      LOG.error('Error loading state: ' + e);
+    }
+    return true;
+  }
+
+  async deleteStateForSlot(slot, showStatus = true) {
+    try {
+      await this.getSaveManager().deleteState(
+        this.saveStatePrefix, slot, showStatus ? this.saveMessageCallback : null);
+    } catch (e) {
+      LOG.error('Error deleting state: ' + e);
+    }
+    return true;
+  }
+
   async onStart(canvas) {
     const { app, audioChannels, fceux, pal, romBytes } = this;
 
@@ -282,7 +344,8 @@ export class Emulator extends AppWrapper {
     fceux.loadGame(new Uint8Array(romBytes));
 
     // Load the save state
-    this.saveStatePath = app.getStoragePath(`${fceux.gameMd5()}/${SAVE_NAME}`);
+    this.saveStatePrefix = app.getStoragePath(`${fceux.gameMd5()}/`)
+    this.saveStatePath = `${this.saveStatePrefix}${SAVE_NAME}`;
     await this.loadState();
 
     // Set configuration (controls and video mode)

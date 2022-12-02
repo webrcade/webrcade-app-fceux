@@ -356,14 +356,14 @@ static void System_SetState(int index)
 static void System_LoadState()
 {
     if (GameInfo && GameInfo->type != GIT_NSF) {
-        FCEUI_LoadState(NULL);
+        FCEUI_LoadState("/tmp/state.fcs");
     }
 }
 
 static void System_SaveState()
 {
     if (GameInfo && GameInfo->type != GIT_NSF) {
-        FCEUI_SaveState(NULL);
+        FCEUI_SaveState("/tmp/state.fcs");
     }
 }
 
@@ -409,6 +409,9 @@ EMSCRIPTEN_BINDINGS(fceux)
     emscripten::function("_loadGameSave", &System_LoadGameSave);
     emscripten::function("_saveGameSave", &System_SaveGameSave);
     emscripten::function("_startGame", &System_StartGame);
+    emscripten::function("_saveState", &System_SaveState);
+    emscripten::function("_loadState", &System_LoadState);
+
 }
 
 // NOTE: Following are non-implemented "dummy" driver functions.
