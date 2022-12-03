@@ -2,9 +2,6 @@ import React from 'react';
 import { Component } from 'react';
 
 import { GamepadControlsTab, KeyboardControlsTab } from './controls';
-import { SaveStatesEditor } from './savestates';
-
-import './savestates.scss'
 
 import {
   CustomPauseScreen,
@@ -14,6 +11,7 @@ import {
   NesBackground,
   PauseScreenButton,
   Resources,
+  SaveStatesEditor,
   SaveWhiteImage,
   TEXT_IDS,
 } from '@webrcade/app-common';
