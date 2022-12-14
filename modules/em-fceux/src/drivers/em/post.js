@@ -14,6 +14,7 @@
     'video-glow': 0.2,
     'system-port-2': 'zapper',
   };
+  Module.getFs = function() { return FS; }
   Module.getAudioBuffer = function() {
     return new Float32Array(fceux.HEAPF32.buffer, Module._Audio_GetBuffer(), 8192);
   };

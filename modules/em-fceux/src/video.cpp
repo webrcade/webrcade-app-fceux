@@ -475,9 +475,11 @@ void FCEU_DispMessage(char *format, int disppos=0, ...)
 {
 	va_list ap;
 
+#ifndef __EMSCRIPTEN__
 	va_start(ap,disppos);
 	vsnprintf(guiMessage.errmsg,sizeof(guiMessage.errmsg),format,ap);
 	va_end(ap);
+#endif
 	// also log messages
 	char temp[2048];
 	va_start(ap,disppos);
@@ -486,10 +488,12 @@ void FCEU_DispMessage(char *format, int disppos=0, ...)
 	strcat(temp, "\n");
 	FCEU_printf(temp);
 
+#ifndef __EMSCRIPTEN__
 	guiMessage.howlong = 180;
 	guiMessage.isMovieMessage = false;
 
 	guiMessage.linesFromBottom = disppos;
+#endif
 
 	//adelikat: Pretty sure this code fails, Movie playback stopped is done with FCEU_DispMessageOnMovie()
 	#ifdef CREATE_AVI
