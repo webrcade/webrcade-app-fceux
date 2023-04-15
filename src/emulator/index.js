@@ -69,6 +69,10 @@ export class Emulator extends AppWrapper {
     return false;
   }
 
+  getDefaultAspectRatio() {
+    return 1.333;
+  }
+
   setRom(pal, name, bytes) {
     if (bytes.byteLength === 0) {
       throw new Error('The size is invalid (0 bytes).');
@@ -296,7 +300,7 @@ export class Emulator extends AppWrapper {
           this.saveStatePrefix, slot, s,
           this.canvas,
           this.saveMessageCallback, null,
-          {aspectRatio: "1.333"});
+          {aspectRatio: "" + this.getDefaultAspectRatio()});
       }
     } catch (e) {
       LOG.error('Error saving state: ' + e);
