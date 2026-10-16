@@ -1,5 +1,5 @@
 import {
-  AppWrapper,
+  BasicAppWrapper,
   DisplayLoop,
   ScriptAudioProcessor,
   LOG,
@@ -21,7 +21,7 @@ const SRAM_NAME = 'rom.sav';
 const SAVE_NAME = 'sav';
 const STATE_FILE_PATH = "/tmp/state.fcs"
 
-export class Emulator extends AppWrapper {
+export class Emulator extends BasicAppWrapper {
   constructor(app, debug = false) {
     super(app, debug);
 
@@ -94,6 +94,12 @@ export class Emulator extends AppWrapper {
   async onShowPauseMenu() {
     await this.saveState();
   }
+
+  // Base class default pauses on any tap anywhere on screen -- redundant
+  // (and disruptive) now that there's a dedicated Pause button in the
+  // touch overlay. Same override snes9x/Coleco/A5200/Jaguar use for the
+  // same reason.
+  createTouchListener() {}
 
   pollControls() {
     const { controllers, fceux } = this;
@@ -381,6 +387,7 @@ export class Emulator extends AppWrapper {
       const samples = fceux.update();
       audioProcessor.storeSound(audioChannels, samples);
       this.pollControls();
+      this.onFrame();
     });
   }
 
